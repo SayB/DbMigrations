@@ -29,7 +29,7 @@ by pasting this line:
 		 Following this way, whenever your you hit a page, the AppController::beforeFilter() will be executed, hence, the DbMigrations plugin
 		 will update your database to the latest version if it's not already.
 	
-	4.2. OR you can go to the plugin's GUI, http://<your_website_url>/db_migrations/migrations and choose the revision you'd like
+	4.2. OR you can go to the plugin's GUI, http://your_website_url/db_migrations/migrations and choose the revision you'd like
 		 your database to be updgraded or downgraded to.
 
 NOTE: I won't recommend using both 4.1 or 4.2 at the same time.
