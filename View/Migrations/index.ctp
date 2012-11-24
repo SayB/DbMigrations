@@ -16,6 +16,8 @@ if (!is_null($currentVersion) && $currentVersion > 0) {
 
 ?>
 
+<h3>Your database is currently at version <?php echo $currentVersion; ?></h3>
+
 <?php echo $this->Form->create('DbMigrations.Migration', array('url' => Router::url('/db_migrations/migrations/conform'))); ?>
 
 <fieldset>
