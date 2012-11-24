@@ -12,17 +12,27 @@ by pasting this line:
 
 	CakePlugin::load('DbMigrations');
 
-3. After this, you may load the schema using CakePHP's shell, like:
+3. After this, take a look at DbMigrations/Config/config.php. Here you will find two setting:
 
-	cake DbMigrations.create
+	table => 'db_migrations'
+	and sanityCheck => true
+	
+	These settings are as simple as they sound. The "table" is the name of the table the DbMigrations plugin is going to use.
+	You can change it to your liking.
+	The second setting: "sanityCheck", when turned to "TRUE" lets DbMigrations check if the table specified in the "table"
+	property exists. If not, it simply creates it so that you won't have to do a thing :)
 
-	OR you can leave this step and let DbMigrations do the job for you automagically !
+	
+4. After following the above steps, there are two ways in which you can keep your databases up-to-date.
 
-4. After following the above steps, all you need to do to start using DbMigrations is simply put these
-lines in your AppController::beforeFilter() - or where ever you see it fit.
-For example you can write a seperate controller for it so that you can upgrade / downgrade manually.
+	4.1. You can simply paste this line "ClassRegistry::init('DbMigrations.Migration')->upgrade(true)" in your AppController::beforeFilter().
+		 Following this way, whenever your you hit a page, the AppController::beforeFilter() will be executed, hence, the DbMigrations plugin
+		 will update your database to the latest version if it's not already.
+	
+	4.2. OR you can go to the plugin's GUI, http://<your_website_url>/db_migrations/migrations and choose the revision you'd like
+		 your database to be updgraded or downgraded to.
 
-	ClassRegistry::init('DbMigrations.Migration')->upgrade(true);
+NOTE: I won't recommend using both 4.1 or 4.2 at the same time.
 
 And you're all set ! - Also, I would always advise to keep this kind of auto-upgrades for environments like Test and Development.
 It won't be good practice at all to use this for production. Fits the dev environment best though.
@@ -30,20 +40,11 @@ It won't be good practice at all to use this for production. Fits the dev enviro
 
 How this works
 -------------------------------------------------------
-Now since the plugin is ready to use. When the code pasted in step 4 is executed, it first checks to see
-if the schema necessary for DbMigrations is loaded (basically it creates a table called "migrations).
-If it's not, then it creates it itself, if you pass boolean TRUE as a parameter to
-DbMigrations.Migration::upgrade().
-
-To further explain how exactly this works, let me tell you concept behind this first. I needed a dirty
-quick solution to keep db changes seamlessly up to date. I ended up porting CodeIgniter styled migrations
-somewhat, as in, that this plugin borrows the concept at whole from CI but the implementation is a bit more
-free styled.
 
 So to get started, after when you have followed the installation steps make a folder "Migrations" in your
 "app" directory. You will find a "Migrations" folder already in the "DbMigrations" directory. That is the
 default folder. You'd be better off keeping your files organized in a folder in your app dir for better
-organization.
+organization. (In future versions I can have that folder name and path configurable too).
 
 A sample file list in the "Migrations" folder would look like this:
 
@@ -74,10 +75,10 @@ contents would be simply:
 	}
 
 
-After making all the changes (following steps in the installation) and making these files, when you run your
-application for the first time, it will run all these files, hence pushing all changes in your database.
+After making all the changes (following steps in the installation) and making these files, if you are following step 4.1
+to update your database, then when you run your application for the first time, it will run all these files, hence pushing all changes in your database.
 
-If you notice you will that all "DbMigration_{$revisionNumber}" classes are instances of the CakePHP Model.
+If you notice, you'll see that all "DbMigration_{$revisionNumber}" classes are instances of the CakePHP Model.
 Hence you can use CakePHP's model layer to it's full potential !
 
 If at any point in time, say you need to downgrade your changes to a specific revision number, assuming 2
@@ -85,23 +86,25 @@ for this explanation. All you need to do is execute this statement at any suitab
 
 	ClassRegistry::init('DbMigrations.Migration')->downgrade(2);
 
-In this case, it will rollback all changes till revision 2. Which means it will drop the table "samples"
+This will rollback all changes till revision 2. Which means it will drop the table "samples"
 (you should code the drop statement in the downgrade() function of DbMigration_3 class).
 
 If you wish to make your database up-to-date again, then just issuing the upgrade() statement, it will
 re-create the samples table and push all changes for issue 336. It won't execute changes for files
 001 and 002.
 
+OR alternatively, you can follow step 4.2.
+
 Important Notes
 -------------------------------------------------------
+
+You will need to be carefuly to name your DbMigration_X classes, that "X" should correspond to the revision number that
+is prepended to every migration file.
 
 There are no checks implemented at this point. No exceptions if you screw up. So you will really need
 to be careful in coding the up() and down() functions for your DbMigration_X classes.
 
 You can also even insert data into tables and issue update statements.
-
-You can also extend this to use CakeSchema objects. But since I like my SQL raw, therefore I find it
-much easier to just code raw SQL statements :)
 
 
 Hope this plugin makes your life easier and makes development fast !
