@@ -1,8 +1,47 @@
 <?php
+App::uses('DbMigrationsAppModel', 'DbMigrations.Model');
 App::uses('Folder', 'Utility');
-class Migration extends Model {
+
+class Migration extends DbMigrationsAppModel {
 
 	public $path = null;
+	public $useTable = 'migrations';
+
+	public function __construct() {
+		parent::__construct();
+		$options = Configure::read('DbMigrations');
+		if (empty($options)) {
+			return;
+		}
+
+		if (!empty($options['table'])) {
+			$this->useTable = $options['table'];
+		}
+
+		if (!empty($options['sanityCheck']) && $options['sanityCheck'] === true) {
+			$sql = "CREATE TABLE IF NOT EXISTS `{$this->useTable}` (`version` int(6) NOT NULL DEFAULT '0') ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+			ClassRegistry::init('DbMigrationsAppModel')->query($sql);
+		}
+	}
+
+	public function conform($version = null) {
+		if (is_null($version)) return;
+
+		$m = $this->find('first');
+		$currentVersion = $m['Migration']['version'];
+
+		if ($version >= $currentVersion) {
+			$this->upgrade(false, $version);
+			return 'upgraded';
+		}
+
+		$this->downgrade($version);
+		return 'downgraded';
+	}
+
+	public function getFiles() {
+		return $this->_getFiles();
+	}
 
 	protected function _getFiles() {
 		$defaultMigrations = dirname(dirname(__FILE__)) . DS . 'Migrations';
@@ -20,11 +59,11 @@ class Migration extends Model {
 	}
 
 	protected function _sanityCheck() {
-		$sql = "CREATE TABLE IF NOT EXISTS `migrations` (`version` int(6) NOT NULL DEFAULT '0') ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+		$sql = "CREATE TABLE IF NOT EXISTS `{$this->useTable}` (`version` int(6) NOT NULL DEFAULT '0') ENGINE=MyISAM DEFAULT CHARSET=utf8;";
 		$this->query($sql);
 	}
 
-	public function upgrade($sanityCheck = false) {
+	public function upgrade($sanityCheck = false, $toVersion = null) {
 
 		if ($sanityCheck) {
 			$this->_sanityCheck();
@@ -43,9 +82,16 @@ class Migration extends Model {
 			$parts = explode('_', $file);
 			$_version = intval($parts[0]);
 			$name = $file;
-			if ($_version > $version) {
-				$toProcess[$_version] = $name;
+			if (is_null($toVersion)) {
+				if ($_version > $version) {
+					$toProcess[$_version] = $name;
+				}
+			} else {
+				if ($_version > $version && $_version <= $toVersion) {
+					$toProcess[$_version] = $name;
+				}
 			}
+
 		}
 
 		if (empty($toProcess)) {
@@ -59,9 +105,7 @@ class Migration extends Model {
 			$lastVersionProcessed = $k;
 		}
 
-		$this->query("TRUNCATE TABLE migrations");
-		$this->set(array('Migration' => array('version' => $lastVersionProcessed)));
-		$this->save();
+		$this->_setMigrationVersion($lastVersionProcessed);
 	}
 
 	public function downgrade($version = 0) {
@@ -88,7 +132,28 @@ class Migration extends Model {
 			$this->_process($k, $v, 'down');
 		}
 
-		$this->query("TRUNCATE TABLE migrations");
+		$this->_setMigrationVersion($version);
+	}
+
+	public function reset() {
+		$files = $this->_getFiles();
+		$toProcess = array();
+		foreach ($files as $f) {
+			$parts = explode('_', $f);
+			$version = intval($parts[0]);
+			$toProcess[$version] = $f;
+		}
+		krsort($toProcess);
+		foreach ($toProcess as $k => $v) {
+			$this->_process($k, $v, 'down');
+		}
+
+		$this->_setMigrationVersion(0);
+	}
+
+	protected function _setMigrationVersion($version) {
+		$this->query("TRUNCATE TABLE {$this->useTable}");
+		if ($version === 0) return;
 		$this->set(array('Migration' => array('version' => $version)));
 		$this->save();
 	}
