@@ -1,0 +1,6 @@
+tmp/*
+app/tmp/*
+/app/tmp
+.DS_Store
+.htaccess.bak
+/nbproject
