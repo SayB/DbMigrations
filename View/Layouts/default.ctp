@@ -8,9 +8,10 @@
     <meta name="author" content="">
 
     <!-- Le styles -->
-    <link href="/db_migrations/css/bootstrap.min.css" rel="stylesheet">
-    <script src="/db_migrations/js/jquery-1.7.2.min.js"></script>
-    <script src="/db_migrations/js/bootstrap.min.js"></script>
+    <?php echo $this->Html->css('/db_migrations/css/bootstrap.min'); ?>
+    <?php echo $this->Html->script('/db_migrations/js/jquery-1.7.2.min'); ?>
+    <?php echo $this->Html->script('/db_migrations/js/bootstrap.min'); ?>
+	  <?php echo $this->fetch('script'); ?>
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>

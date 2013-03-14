@@ -6,6 +6,7 @@ class Migration extends DbMigrationsAppModel {
 
 	public $path = null;
 	public $useTable = 'migrations';
+	public $setEngine = 'MyISAM';
 
 	public function __construct() {
 		parent::__construct();
@@ -15,19 +16,29 @@ class Migration extends DbMigrationsAppModel {
 		}
 
 		if (!empty($options['table'])) {
+		
+			App::import('Core', 'ConnectionManager');
+			$dataSource = ConnectionManager::getDataSource('default');
+			$prefix= $dataSource->config['prefix'];
+
 			$this->useTable = $options['table'];
+		}
+		
+		if (!empty($options['engine'])) {
+			$this->setEngine = $options['engine'];
 		}
 
 		if (!empty($options['sanityCheck']) && $options['sanityCheck'] === true) {
-			$sql = "CREATE TABLE IF NOT EXISTS `{$this->useTable}` (`version` int(6) NOT NULL DEFAULT '0') ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+			$sql = "CREATE TABLE IF NOT EXISTS `$prefix{$this->useTable}` (`version` int(6) NOT NULL DEFAULT '0') ENGINE={$this->setEngine} DEFAULT CHARSET=utf8;";
 			ClassRegistry::init('DbMigrationsAppModel')->query($sql);
 		}
 	}
 
 	public function conform($version = null) {
 		if (is_null($version)) return;
-
+		
 		$m = $this->find('first');
+		
 		$currentVersion = $m['Migration']['version'];
 
 		if ($version >= $currentVersion) {
@@ -59,7 +70,7 @@ class Migration extends DbMigrationsAppModel {
 	}
 
 	protected function _sanityCheck() {
-		$sql = "CREATE TABLE IF NOT EXISTS `{$this->useTable}` (`version` int(6) NOT NULL DEFAULT '0') ENGINE=MyISAM DEFAULT CHARSET=utf8;";
+		$sql = "CREATE TABLE IF NOT EXISTS `$prefix{$this->useTable}` (`version` int(6) NOT NULL DEFAULT '0') ENGINE={$this->setEngine} DEFAULT CHARSET=utf8;";
 		$this->query($sql);
 	}
 
@@ -152,7 +163,7 @@ class Migration extends DbMigrationsAppModel {
 	}
 
 	protected function _setMigrationVersion($version) {
-		$this->query("TRUNCATE TABLE {$this->useTable}");
+		//$this->query("TRUNCATE TABLE {$this->useTable}");
 		if ($version === 0) return;
 		$this->set(array('Migration' => array('version' => $version)));
 		$this->save();

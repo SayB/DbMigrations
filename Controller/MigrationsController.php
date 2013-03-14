@@ -13,10 +13,11 @@ class MigrationsController extends DbMigrationsAppController {
 	}
 
 	public function conform() {
+		
 		if (!$this->request->is('post')) {
 			$msg = __('Invalid request');
 			$this->Session->setFlash($msg, 'default', array('class' => 'label label-success'));
-			$this->redirect($this->referer());
+			$this->redirect(array('controller'=>'migrations','action'=>'index'));
 			return;
 		}
 
@@ -30,7 +31,7 @@ class MigrationsController extends DbMigrationsAppController {
 		}
 
 		$this->Session->setFlash($msg, 'default', array('class' => 'label label-success'));
-		$this->redirect($this->referer());
+		$this->redirect(array('controller'=>'migrations','action'=>'index'));
 		return;
 	}
 }
